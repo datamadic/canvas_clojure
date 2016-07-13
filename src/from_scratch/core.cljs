@@ -28,21 +28,30 @@
 (def image (js/document.getElementById "source"))
 (def context-img (.getContext canvas-img  "2d" ))
 
-(def img-width 3)
-(def img-height 3)
+(def img-width 300)
+(def img-height 227)
 (def num-pix (* img-width img-height))
 (def px-coll (range num-pix))
 (def mixed (shuffle px-coll))
 
+; (println (take 5 px-coll))
+(println (take 5 mixed))
 (loop [idx 0]
   (if (< idx num-pix)
     (do
-      (.drawImage context image 33 71 104 124 21 20 87 104)
-      (println "the idx" idx
-               (nth mixed idx)
-               "el divo" (Math/floor  (/ num-pix idx))
-               "the collumn " (mod idx 30)
-               "the row" (Math/floor (/ (- num-pix idx) img-width)))
+      (let [dx (mod (nth mixed idx) img-width)
+            dy (- img-height (Math/floor (/ (- num-pix (+ 1 (nth mixed idx))) img-width)))
+            sx (mod idx img-width)
+            sy (- img-height (Math/floor (/ (- num-pix (+ 1 idx)) img-width)))
+            ]
+        ; (println "s: (" sx "," sy  ")   d:"  "(" dx "," dy  ")   ")
+        (.drawImage context image sx sy 1 1 dx dy 1 1))
+      
+      ;; (println "the idx" idx
+      ;;          (nth mixed idx)
+      ;;          ;"el divo" (Math/floor  (/ num-pix idx))
+      ;;          "the column "
+      ;;          "the row" (- img-height (Math/floor (/ (- num-pix (+ 1 idx)) img-width)) ) )
       (recur (+ 1 idx)))))
 
 ; (Math/floor (/ num-pix num-pix))
@@ -53,7 +62,7 @@
 ;; how many sets of rows are before?
 
 (comment
-  sx refers to the src image, dx refers to the dest canvas 
+  ; sx refers to the src image, dx refers to the dest canvas 
   void ctx.drawImage(image, dx, dy);
   void ctx.drawImage(image, dx, dy, dWidth, dHeight);
   void ctx.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
