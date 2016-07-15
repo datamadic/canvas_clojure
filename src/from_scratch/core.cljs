@@ -9,6 +9,7 @@
 
 (println (m/m 4))
 
+(def c-pump (chan))
 (def c-mousedown (chan))
 (def c-mousemove (chan))
 (def c-click (chan))
@@ -28,31 +29,89 @@
 (def image (js/document.getElementById "source"))
 (def context-img (.getContext canvas-img  "2d" ))
 
+(def num-blocks 300)
 (def img-width 300)
-(def img-height 227)
+(def img-height 300)
 (def num-pix (* img-width img-height))
 (def px-coll (range num-pix))
 (def mixed (shuffle px-coll))
+
+(def block-size (/ img-width num-blocks))
+
+(println block-size "is the block size")
+
+;(defn sort-step)
 
 ; (println (take 5 px-coll))
 (println (take 5 mixed))
 (loop [idx 0]
   (if (< idx num-pix)
     (do
-      (let [dx (mod (nth mixed idx) img-width)
-            dy (- img-height (Math/floor (/ (- num-pix (+ 1 (nth mixed idx))) img-width)))
-            sx (mod idx img-width)
-            sy (- img-height (Math/floor (/ (- num-pix (+ 1 idx)) img-width)))
+      (let [dx (mod (nth mixed idx) num-blocks)
+            dy (- img-height (Math/floor (/ (- num-pix (+ 1 (nth mixed idx))) num-blocks)))
+            sx (mod idx num-blocks)
+            sy (- img-height (Math/floor (/ (- num-pix (+ 1 idx)) num-blocks)))
             ]
         ; (println "s: (" sx "," sy  ")   d:"  "(" dx "," dy  ")   ")
-        (.drawImage context image sx sy 1 1 dx dy 1 1))
-      
-      ;; (println "the idx" idx
-      ;;          (nth mixed idx)
-      ;;          ;"el divo" (Math/floor  (/ num-pix idx))
-      ;;          "the column "
-      ;;          "the row" (- img-height (Math/floor (/ (- num-pix (+ 1 idx)) img-width)) ) )
+        ;(.drawImage context image sx sy 1 1 (* block-size dx) (- dy 1) block-size block-size)
+        )
+        
+     
       (recur (+ 1 idx)))))
+
+(loop [idx 0
+       lines []]
+  (if (< idx num-pix)
+    (do
+      (let [dx (mod (nth mixed idx) num-blocks)
+            dy (- img-height (Math/floor (/ (- num-pix (+ 1 (nth mixed idx))) num-blocks)))
+            sx (mod idx num-blocks)
+            sy (- img-height (Math/floor (/ (- num-pix (+ 1 idx)) num-blocks)))
+            ]
+        
+        (recur (+ 1 idx)
+               (conj lines [sx sy dx dy]))))
+    (go
+      (println (take 5 lines))
+      (dotimes [n  5]
+        (dotimes [i (- (count lines) 1)]
+          (let [[sx sy dx dy] (nth lines i)
+                scaler (* (- 4 n)  (/ 1 4))]
+            (.drawImage
+             context image
+             sx
+             sy
+             1 1
+             ; (* (* scaler (- sx dx)) 4)
+             ; (* (* scaler (- sy dy)) 4)
+             (- sx (* scaler (- sx dx)))
+             (- sy (* scaler (- sy dy)))
+             1
+             1)))
+        (<! (timeout 2000))
+        
+        (println (* (- 4 n)  (/ 1 4)))
+        ))))
+
+;(go-loop [t (timeout 1000)])
+
+
+(.drawImage context  image  0 0 300 227 300 0  300 227)
+
+;; (go
+;;   (while true
+;;     (let [])))
+
+(defn pump []
+  (js/requestAnimationFrame #(go (>! c-pump true)))
+  (go-loop [p (<! c-pump)]
+    (println "wack")
+    (js/requestAnimationFrame #(go (>! c-pump true)))
+    (recur (<! c-pump))))
+
+
+;(pump)
+
 
 ; (Math/floor (/ num-pix num-pix))
 ;; [0 1 2
@@ -112,6 +171,10 @@
     (println "down it was..." event))
   (recur))
 
+
+(def c-keypress (chan (dropping-buffer 1)))
+(.addEventListener js/document  "keydown" #(go (>! c-keypress {:action :keypress :data %})))
+
 (.addEventListener canvas "mousedown" #(go (>! c-mousedown %)))
 
 
@@ -132,7 +195,20 @@
   (let [data (:data (<! s-move))]
     (println data))
   (recur))
-  
+
+(go (while true
+      (let [[v ch] (alts! [c-keypress s-move])]
+        (println "Read " v "From" ch))))
+
+;; (let [c1 (chan)
+;;       c2 (chan)]
+;;   (go (while true
+;;         (let [[v ch] (alts! [c1 c2])]
+;;           (println "Read" v "from" ch))))
+;;   (go (>! c1 "hi"))
+;;   (go (>! c2 "there")))
+
+
 ;; (go-loop []
 ;;   (let [event (<! c-mousemove)]
 ;;     (println "got it " event)
