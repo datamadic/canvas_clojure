@@ -24,40 +24,13 @@
 
 (def canvas (js/document.getElementById "canvas"))
 (def context (.getContext canvas  "2d" ))
-
-(def canvas-img (js/document.getElementById "canvas-img"))
 (def image (js/document.getElementById "source"))
-(def context-img (.getContext canvas-img  "2d" ))
-
 (def num-blocks 300)
 (def img-width 300)
 (def img-height 300)
 (def num-pix (* img-width img-height))
 (def px-coll (range num-pix))
 (def mixed (shuffle px-coll))
-
-(def block-size (/ img-width num-blocks))
-
-(println block-size "is the block size")
-
-;(defn sort-step)
-
-; (println (take 5 px-coll))
-(println (take 5 mixed))
-(loop [idx 0]
-  (if (< idx num-pix)
-    (do
-      (let [dx (mod (nth mixed idx) num-blocks)
-            dy (- img-height (Math/floor (/ (- num-pix (+ 1 (nth mixed idx))) num-blocks)))
-            sx (mod idx num-blocks)
-            sy (- img-height (Math/floor (/ (- num-pix (+ 1 idx)) num-blocks)))
-            ]
-        ; (println "s: (" sx "," sy  ")   d:"  "(" dx "," dy  ")   ")
-        ;(.drawImage context image sx sy 1 1 (* block-size dx) (- dy 1) block-size block-size)
-        )
-        
-     
-      (recur (+ 1 idx)))))
 
 (loop [idx 0
        lines []]
@@ -66,32 +39,59 @@
       (let [dx (mod (nth mixed idx) num-blocks)
             dy (- img-height (Math/floor (/ (- num-pix (+ 1 (nth mixed idx))) num-blocks)))
             sx (mod idx num-blocks)
-            sy (- img-height (Math/floor (/ (- num-pix (+ 1 idx)) num-blocks)))
-            ]
-        
+            sy (- img-height (Math/floor (/ (- num-pix (+ 1 idx)) num-blocks)))]
         (recur (+ 1 idx)
                (conj lines [sx sy dx dy]))))
     (go
-      (println (take 5 lines))
-      (dotimes [n  5]
+      (let [n-steps 39
+            iterate 40]
+      (dotimes [n  iterate]
         (dotimes [i (- (count lines) 1)]
           (let [[sx sy dx dy] (nth lines i)
-                scaler (* (- 4 n)  (/ 1 4))]
+                scaler (* (- n-steps n)  (/ 1 n-steps))]
             (.drawImage
              context image
-             sx
-             sy
+             sx sy
              1 1
-             ; (* (* scaler (- sx dx)) 4)
-             ; (* (* scaler (- sy dy)) 4)
              (- sx (* scaler (- sx dx)))
              (- sy (* scaler (- sy dy)))
-             1
-             1)))
-        (<! (timeout 2000))
+             1 1)))
+        (<! (timeout 20)))))))
+
+
+;; (def canvas-img (js/document.getElementById "canvas-img"))
+;; (def context-img (.getContext canvas-img  "2d" ))
+
+
+;; (def block-size (/ img-width num-blocks))
+
+;; (println block-size "is the block size")
+
+;; ;(defn sort-step)
+
+;; ; (println (take 5 px-coll))
+;; (println (take 5 mixed))
+;; (loop [idx 0]
+;;   (if (< idx num-pix)
+;;     (do
+;;       (let [dx (mod (nth mixed idx) num-blocks)
+;;             dy (- img-height (Math/floor (/ (- num-pix (+ 1 (nth mixed idx))) num-blocks)))
+;;             sx (mod idx num-blocks)
+;;             sy (- img-height (Math/floor (/ (- num-pix (+ 1 idx)) num-blocks)))
+;;             ]
+;;         ; (println "s: (" sx "," sy  ")   d:"  "(" dx "," dy  ")   ")
+;;         ;(.drawImage context image sx sy 1 1 (* block-size dx) (- dy 1) block-size block-size)
+;;         )
         
-        (println (* (- 4 n)  (/ 1 4)))
-        ))))
+     
+;;       (recur (+ 1 idx)))))
+
+
+
+
+
+
+
 
 ;(go-loop [t (timeout 1000)])
 
